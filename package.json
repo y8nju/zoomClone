@@ -1,5 +1,5 @@
 {
-  "name": "zoom-server",
+  "name": "zoomClone",
   "version": "1.0.0",
   "description": "Zoom Clone using Node.js, WebRTC and Websokets",
   "license": "ISC",
