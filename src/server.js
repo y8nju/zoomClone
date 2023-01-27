@@ -25,6 +25,14 @@ wsServer.on('connection', (socket) => {
 		showRoom();
 		socket.to(roomName).emit("welcome");
 	});
+	socket.on("disconnecting", () => {
+		// 클라이언트가 서버와 연결이 끊어지기 전에 메세지 전송
+		socket.rooms.forEach(room => socket.to(room).emit("bye"));
+	});
+	socket.on("new_message", (msg, room, done) => {
+		socket.to(room).emit("new_message", msg);
+		done();
+	})
 });
 
 // app.listen(8000, handleListen);
