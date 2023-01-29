@@ -17,22 +17,24 @@ const httpServer = http.createServer(app);
 const wsServer = new Server(httpServer);
 
 wsServer.on('connection', (socket) => {
+	socket["nickname"] = "Anon";
 	socket.onAny((event, ...args) => {
 		console.log(`Socket Event: ${event}`)
 	})
-	socket.on("enter_room", (roomName, showRoom) => {
+	socket.on("enter_room", (roomName, nickname, showRoom) => {
 		socket.join(roomName);
+		socket["nickname"] = nickname;
 		showRoom();
-		socket.to(roomName).emit("welcome");
+		socket.to(roomName).emit("welcome", socket.nickname);
 	});
 	socket.on("disconnecting", () => {
 		// 클라이언트가 서버와 연결이 끊어지기 전에 메세지 전송
-		socket.rooms.forEach(room => socket.to(room).emit("bye"));
+		socket.rooms.forEach(room => socket.to(room).emit("bye", socket.nickname));
 	});
 	socket.on("new_message", (msg, room, done) => {
-		socket.to(room).emit("new_message", msg);
+		socket.to(room).emit("new_message", `${socket.nickname}: ${msg}`);
 		done();
-	})
+	});
 });
 
 // app.listen(8000, handleListen);
