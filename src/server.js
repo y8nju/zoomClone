@@ -3,6 +3,19 @@ import http from "http";
 import express from "express";
 import { Server } from "socket.io";
 
+function publicRoom() {
+	const {sockets: {adapter: {sids, rooms}}} = wsServer;
+	// const sids =  wsServer.sockets.adapter.sids;
+	// const rooms =  wsServer.sockets.adapter.rooms;
+	const publicRooms = [];
+	rooms.forEach((_, key) => {
+		if(sids.get(key) === undefined) {
+			publicRooms.push(key);
+		}
+	});
+	return publicRooms;
+}
+
 const app = express();
 
 // console.log(__dirname); //C:\ARU\zoomClone\src
@@ -19,8 +32,9 @@ const wsServer = new Server(httpServer);
 wsServer.on('connection', (socket) => {
 	socket["nickname"] = "Anon";
 	socket.onAny((event, ...args) => {
-		console.log(`Socket Event: ${event}`)
-	})
+		console.log(wsServer.sockets.adapter);
+		console.log(`Socket Event: ${event}`);
+	});
 	socket.on("enter_room", (roomName, nickname, showRoom) => {
 		socket.join(roomName);
 		socket["nickname"] = nickname;
