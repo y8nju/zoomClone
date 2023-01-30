@@ -2,7 +2,7 @@ import http from "http";
 // import WebSocket, { WebSocketServer } from "ws";
 import express from "express";
 import { Server } from "socket.io";
-import { disconnect } from "process";
+import { instrument } from "@socket.io/admin-ui";
 
 function publicRoom() {
 	const {sockets: {adapter: {sids, rooms}}} = wsServer;
@@ -35,7 +35,15 @@ app.get("*", (_, res) => res.redirect("/"));
 
 
 const httpServer = http.createServer(app);
-const wsServer = new Server(httpServer);
+const wsServer = new Server(httpServer, {
+	cors: {
+		origin: ["https://admin.socket.io"],
+		credentials: true
+	}
+});
+instrument(wsServer, {
+	auth: false
+});
 
 wsServer.on('connection', (socket) => {
 	changeRoom();
