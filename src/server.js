@@ -2,6 +2,7 @@ import http from "http";
 // import WebSocket, { WebSocketServer } from "ws";
 import express from "express";
 import { Server } from "socket.io";
+import { disconnect } from "process";
 
 function publicRoom() {
 	const {sockets: {adapter: {sids, rooms}}} = wsServer;
@@ -30,6 +31,10 @@ const httpServer = http.createServer(app);
 const wsServer = new Server(httpServer);
 
 wsServer.on('connection', (socket) => {
+	function changeRoom() {
+		wsServer.sockets.emit("room_change", publicRoom());
+	}
+	changeRoom();
 	socket["nickname"] = "Anon";
 	socket.onAny((event, ...args) => {
 		console.log(wsServer.sockets.adapter);
@@ -40,10 +45,15 @@ wsServer.on('connection', (socket) => {
 		socket["nickname"] = nickname;
 		showRoom();
 		socket.to(roomName).emit("welcome", socket.nickname);
+		changeRoom()
 	});
 	socket.on("disconnecting", () => {
 		// 클라이언트가 서버와 연결이 끊어지기 전에 메세지 전송
 		socket.rooms.forEach(room => socket.to(room).emit("bye", socket.nickname));
+	});
+	socket.on("disconnect", () => {
+		// 클라이언트가 서버와 연결이 끊어지면 메세지 전송
+		changeRoom()
 	});
 	socket.on("new_message", (msg, room, done) => {
 		socket.to(room).emit("new_message", `${socket.nickname}: ${msg}`);

@@ -53,3 +53,16 @@ socket.on("bye", (left) => {
 });
 // new_message 이벤트: 다른 유저에게 출력
 socket.on("new_message", addMessage);
+// socket.on("room_change", (msg) => console.log(msg));
+socket.on("room_change", (rooms) => {
+    const roomList = welcome.querySelector("ul");
+    roomList.innerText = "";
+    if(rooms.length === 0) {
+        return;
+    };
+    rooms.forEach(room => {
+        const li = document.createElement("li");
+        li.innerText = room;
+        roomList.appendChild(li);
+    });
+});
