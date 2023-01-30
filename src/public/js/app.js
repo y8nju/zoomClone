@@ -26,11 +26,16 @@ function handleMessageSubmit(event) {
     input.value = "";
 }
 
-function showRoom() {
+function roomTitle(newCount) {
+    // room에 참여 중인 user count
+    const h3 = room.querySelector("h3");
+    h3.innerText = `Room ${roomName}(${newCount})`;
+}
+
+function showRoom(newCount) {
     welcome.hidden = true;
     room.hidden = false;
-    const h3 = room.querySelector("h3");
-    h3.innerText = `Room ${roomName}`;
+    roomTitle(newCount);
     const messageForm = room.querySelector("#messageForm");
     messageForm.addEventListener("submit", handleMessageSubmit);
 }
@@ -45,11 +50,13 @@ function handleRoomSubmit(event) {
 
 form.addEventListener("submit", handleRoomSubmit);
 
-socket.on("welcome", (user) => {
+socket.on("welcome", (user, newCount) => {
     addMessage(`${user} Joined!`);
+    roomTitle(newCount);
 });
-socket.on("bye", (left) => {
+socket.on("bye", (left, newCount) => {
     addMessage(`${left} left...`);
+    roomTitle(newCount);
 });
 // new_message 이벤트: 다른 유저에게 출력
 socket.on("new_message", addMessage);

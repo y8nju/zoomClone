@@ -17,6 +17,13 @@ function publicRoom() {
 	return publicRooms;
 }
 
+function changeRoom() {
+	wsServer.sockets.emit("room_change", publicRoom(), countRoom());
+}
+function countRoom(roomName) {
+	return wsServer.sockets.adapter.rooms.get(roomName)?.size
+}
+
 const app = express();
 
 // console.log(__dirname); //C:\ARU\zoomClone\src
@@ -31,9 +38,6 @@ const httpServer = http.createServer(app);
 const wsServer = new Server(httpServer);
 
 wsServer.on('connection', (socket) => {
-	function changeRoom() {
-		wsServer.sockets.emit("room_change", publicRoom());
-	}
 	changeRoom();
 	socket["nickname"] = "Anon";
 	socket.onAny((event, ...args) => {
@@ -43,17 +47,17 @@ wsServer.on('connection', (socket) => {
 	socket.on("enter_room", (roomName, nickname, showRoom) => {
 		socket.join(roomName);
 		socket["nickname"] = nickname;
-		showRoom();
-		socket.to(roomName).emit("welcome", socket.nickname);
-		changeRoom()
+		showRoom(countRoom(roomName));
+		socket.to(roomName).emit("welcome", socket.nickname, countRoom(roomName));
+		changeRoom();
 	});
 	socket.on("disconnecting", () => {
 		// 클라이언트가 서버와 연결이 끊어지기 전에 메세지 전송
-		socket.rooms.forEach(room => socket.to(room).emit("bye", socket.nickname));
+		socket.rooms.forEach(room => socket.to(room).emit("bye", socket.nickname, countRoom(room)-1));
 	});
 	socket.on("disconnect", () => {
 		// 클라이언트가 서버와 연결이 끊어지면 메세지 전송
-		changeRoom()
+		changeRoom();
 	});
 	socket.on("new_message", (msg, room, done) => {
 		socket.to(room).emit("new_message", `${socket.nickname}: ${msg}`);
