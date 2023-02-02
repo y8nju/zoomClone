@@ -128,21 +128,43 @@ socket.on("welcome", async () =>{
 
 // B peer / Answer send
 socket.on("offer", async (offer) => {
-    // console.log(offer);
+    console.log("recived the offer");
     myPeerConnection.setRemoteDescription(offer);
     const answer = await myPeerConnection.createAnswer();
     myPeerConnection.setLocalDescription(answer);
     socket.emit("answer", answer, roomName);
+    console.log("sent the answer");
 });
 
 // A peer / Answer receive
 socket.on("answer", answer => {
+    console.log("recived the answer");
     myPeerConnection.setRemoteDescription(answer);
 })
+
+socket.on("ice", ice => {
+    console.log("recived candidate");
+    myPeerConnection.addIceCandidate(ice);
+    // A peer: candidate send
+    // B peer: IceCandidate Add
+});
 
 // RTC Code
 function makeConnection() {
     myPeerConnection = new RTCPeerConnection();
+    myPeerConnection.addEventListener("icecandidate", handleIce);
+    myPeerConnection.addEventListener("addstream", handleAddStream);
     myStream.getTracks()
         .forEach(track => myPeerConnection.addTrack(track, myStream));
+}
+
+function handleIce(data) {
+    console.log("sent candidate");
+    socket.emit("ice", data.candidate, roomName);	// 두 peer가 서로 데이터를 주고 받음
+}
+
+function handleAddStream(data) {
+    const peersFace = document.getElementById("peersFace");
+    peersFace.srcObject = data.stream;
+    // 나의 브라우저 화면에 상대 peer의 video를 띄움
 }
