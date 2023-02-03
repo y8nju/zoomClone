@@ -90,7 +90,13 @@ async function handleCameraChange() {
     // 카메라를 바꿀 때 마다, 새로운 stream을 만듦
     await getMedia(camerasSelect.value);
     if(myPeerConnection) {
-        console.log(myPeerConnection.getSenders());
+        // 내가 video track을 받으면, 내가 선택한 새 장치로 업데이트된 video track을 받음
+        const videoTrack = myStream.getVideoTracks()[0]; // 첫번째 video track 선택, 나 자신을 위한 my steam
+        // sender는 다른 브라우저로 보내진 비디오와 오디오 데이터를 컨트롤하는 방법
+        const videoSender = myPeerConnection
+            .getSenders()
+            .find(sender => sender.track.kind === "video");
+        videoSender.replaceTrack(videoTrack); // video track 변경
     }
 }
 
