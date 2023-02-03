@@ -5,6 +5,7 @@ const muteBtn = document.getElementById("mute");
 const cameraBtn = document.getElementById("camera");
 const camerasSelect = document.getElementById("cameras");
 const call = document.getElementById("call");
+const messageWrap = document.getElementById("messageWrap");
 
 call.hidden = true;
 
@@ -14,6 +15,7 @@ let muted = false;
 let cameraOff = false;
 let roomName;
 let myPeerConnection;
+let myDataChannel;
 
 async function getCameras() {
     try {
@@ -108,32 +110,83 @@ camerasSelect.addEventListener("input", handleCameraChange);
 const welcome = document.getElementById("welcome");
 const welcomeForm = welcome.querySelector("form");
 
-async function initCall() {
+async function initCall(newCount) {
     welcome.hidden = true;
     call.hidden = false;
     await getMedia();
     makeConnection();
+    roomTitle(newCount);
+    const messageForm = call.querySelector("#messageForm");
+    messageForm.addEventListener("submit", handleMessageSubmit);
 }
 
 async function handleWelcomeSubmit(event) {
     event.preventDefault();
-    const input = welcomeForm.querySelector("input");
+    const roomNameInput = welcome.querySelector("#roomName");
+    const nicknameInput = welcome.querySelector("#nickname");
     await initCall();
-    socket.emit("join_room", input.value);
-    roomName = input.value;
-    input.value = "";
+    socket.emit("join_room", roomNameInput.value, nicknameInput.value, initCall);
+    roomName = roomNameInput.value;
+    roomNameInput.value = "";
 }
 
 welcomeForm.addEventListener("submit", handleWelcomeSubmit);
 
+function addMessage(message) {
+    const ul = messageWrap.querySelector("ul");
+    const li = document.createElement("li");
+    li.innerText = message;
+    ul.appendChild(li);
+}
+
+function handleMessageSubmit(event) {
+    event.preventDefault();
+    const input = call.querySelector("#messageForm input");
+    const message = input.value;
+    socket.emit("new_message", message, roomName, () => {
+        // new_message 이벤트: 나에게 출력
+        addMessage(`You: ${message}`);
+    });
+    input.value = "";
+}
+
+function roomTitle(newCount) {
+    // room에 참여 중인 user count
+    const h3 = call.querySelector("h3");
+    h3.innerText = `Room ${roomName}(${newCount})`;
+}
+
 // Socket Code
+socket.on("bye", (left, newCount) => {
+    addMessage(`${left} left...`);
+    roomTitle(newCount);
+});
+
+// new_message 이벤트: 다른 유저에게 출력
+socket.on("new_message", addMessage);
+// socket.on("room_change", (msg) => console.log(msg));
+socket.on("room_change", (rooms) => {
+    const roomList = welcome.querySelector("#roomList");
+    roomList.innerText = "";
+    if(rooms.length === 0) {
+        return;
+    };
+    rooms.forEach(room => {
+        const li = document.createElement("li");
+        li.innerText = room;
+        roomList.appendChild(li);
+    });
+});
 
 // A peer / Offer send
-socket.on("welcome", async () =>{
+socket.on("welcome", async (user, newCount) =>{
+    console.log(user)
     const offer = await myPeerConnection.createOffer();
     myPeerConnection.setLocalDescription(offer);
     console.log("sent the offer");
     socket.emit("offer", offer, roomName);
+    addMessage(`${user} Joined!`);
+    roomTitle(newCount);
 });
 
 // B peer / Answer send
