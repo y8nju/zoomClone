@@ -43,7 +43,7 @@ async function getMedia(deviceId) {
         audio: true,
         video: {
             deviceId: {
-                exact: deviceId
+                exact: deviceId // 서로 다른 id로 새로운 stream을 만듦
             }
         }
     }
@@ -87,7 +87,11 @@ function handleCameraClick(){
     }
 }
 async function handleCameraChange() {
+    // 카메라를 바꿀 때 마다, 새로운 stream을 만듦
     await getMedia(camerasSelect.value);
+    if(myPeerConnection) {
+        console.log(myPeerConnection.getSenders());
+    }
 }
 
 muteBtn.addEventListener("click", handleMuteClick);
@@ -154,6 +158,8 @@ function makeConnection() {
     myPeerConnection = new RTCPeerConnection();
     myPeerConnection.addEventListener("icecandidate", handleIce);
     myPeerConnection.addEventListener("addstream", handleAddStream);
+
+    //peer 연결을 만드는 동시에 우리는 그 연결에 track을 추가
     myStream.getTracks()
         .forEach(track => myPeerConnection.addTrack(track, myStream));
 }
@@ -165,6 +171,5 @@ function handleIce(data) {
 
 function handleAddStream(data) {
     const peersFace = document.getElementById("peersFace");
-    peersFace.srcObject = data.stream;
-    // 나의 브라우저 화면에 상대 peer의 video를 띄움
+    peersFace.srcObject = data.stream;  // 나의 브라우저 화면에 상대 peer의 video를 띄움
 }
