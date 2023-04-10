@@ -1,0 +1,6 @@
+:root:not([data-theme=dark]) {
+  --primary: #43a047;
+}
+h1 {
+  margin-bottom: 0;
+}
